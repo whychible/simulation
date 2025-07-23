@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>핵분열 시뮬레이션</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0c0c0c, #1a1a2e);
+            color: white;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #00ff88;
+            font-size: 2.5em;
+            text-shadow: 0 0 20px #00ff88;
+            margin-bottom: 30px;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background: linear-gradient(45deg, #ff6b35, #ff8e53);
+            color: white;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+        }
+        
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        #canvas {
+            border: 2px solid #00ff88;
+            border-radius: 10px;
+            display: block;
+            margin: 0 auto;
+            background: radial-gradient(circle at center, #001122, #000011);
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+        }
+        
+        .info-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .info-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .info-card h3 {
+            color: #00ff88;
+            margin-top: 0;
+            font-size: 1.2em;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+        
+        .energy-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .energy-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b35, #ffff00, #ff0000);
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+        
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 136, 0.3); }
+            50% { box-shadow: 0 0 40px rgba(0, 255, 136, 0.6); }
+        }
+        
+        .glowing {
+            animation: glow 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 핵분열 시뮬레이션</h1>
+        
+        <div class="controls">
+            <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; justify-content: center; margin-bottom: 20px;">
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                    <label style="color: #00ff88; font-weight: bold; margin-bottom: 5px;">우라늄 원자핵 수</label>
+                    <input type="number" id="uraniumCount" value="100" min="100" max="2000" 
+                           style="padding: 8px; border-radius: 5px; border: 2px solid #00ff88; background: rgba(0,0,0,0.7); color: white; text-align: center; width: 100px;">
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                    <label style="color: #00ff88; font-weight: bold; margin-bottom: 5px;">초기 중성자 수</label>
+                    <input type="number" id="neutronCount" value="10" min="1" max="1000" 
+                           style="padding: 8px; border-radius: 5px; border: 2px solid #00ff88; background: rgba(0,0,0,0.7); color: white; text-align: center; width: 100px;">
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                    <label style="color: #00ff88; font-weight: bold; margin-bottom: 5px;">임계질량 배수</label>
+                    <select id="criticalMass" style="padding: 8px; border-radius: 5px; border: 2px solid #00ff88; background: rgba(0,0,0,0.7); color: white; width: 120px;">
+                        <option value="1">1x (임계)</option>
+                        <option value="2" selected>2x (초임계)</option>
+                        <option value="5">5x (폭탄급)</option>
+                        <option value="10">10x (리틀보이)</option>
+                        <option value="20">20x (팻맨)</option>
+                        <option value="50">50x (수소폭탄)</option>
+                    </select>
+                </div>
+            </div>
+            <button id="startBtn">시뮬레이션 시작</button>
+            <button id="resetBtn">리셋</button>
+            <button id="pauseBtn">일시정지</button>
+            <button id="bombBtn" style="background: linear-gradient(45deg, #ff0000, #ff4444); box-shadow: 0 4px 15px rgba(255, 0, 0, 0.4);">💥 원자폭탄 시뮬레이션</button>
+        </div>
+        
+        <canvas id="canvas" width="800" height="600"></canvas>
+        
+        <div class="info-panel">
+            <div class="info-card">
+                <h3>🔬 시뮬레이션 정보</h3>
+                <div class="stats">
+                    <span>분열된 원자핵:</span>
+                    <span id="fissionCount">0</span>
+                </div>
+                <div class="stats">
+                    <span>활성 중성자:</span>
+                    <span id="activeNeutronCount">0</span>
+                </div>
+                <div class="stats">
+                    <span>총 방출 중성자:</span>
+                    <span id="totalNeutronCount">0</span>
+                </div>
+                <div class="stats">
+                    <span>폭발 에너지:</span>
+                    <span id="energyCount">0 kt TNT</span>
+                </div>
+                <div class="stats">
+                    <span>반응률:</span>
+                    <span id="reactionRate">0 /초</span>
+                </div>
+                <div>에너지 레벨:</div>
+                <div class="energy-bar">
+                    <div class="energy-fill" id="energyBar" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <div class="info-card">
+                <h3>⚛️ 핵분열 과정</h3>
+                <p><strong>1단계:</strong> 중성자가 우라늄-235 원자핵과 충돌</p>
+                <p><strong>2단계:</strong> 불안정한 우라늄-236 형성</p>
+                <p><strong>3단계:</strong> 두 개의 더 작은 원자핵으로 분열</p>
+                <p><strong>4단계:</strong> 2-3개의 새로운 중성자와 에너지 방출</p>
+                <p><strong>연쇄반응:</strong> 방출된 중성자가 다른 원자핵을 분열시킴</p>
+            </div>
+            
+            <div class="info-card">
+                <h3>💥 원자폭탄 수치</h3>
+                <p><strong>리틀보이 (히로시마):</strong> 15 kt TNT, 64kg 우라늄-235</p>
+                <p><strong>팻맨 (나가사키):</strong> 21 kt TNT, 6.2kg 플루토늄-239</p>
+                <p><strong>임계질량:</strong> U-235 약 52kg, Pu-239 약 10kg</p>
+                <p><strong>연쇄반응 시간:</strong> 약 0.0000001초 (100나노초)</p>
+                <p><strong>분열 세대:</strong> 80세대에서 완전 폭발</p>
+                <p><strong>효율:</strong> 실제 폭탄은 1-2%만 분열됨</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let particles = [];
+        let isRunning = false;
+        let isPaused = false;
+        let isBombMode = false;
+        let generationCount = 0;
+        let lastReactionTime = 0;
+        let reactionRate = 0;
+        let stats = {
+            fissions: 0,
+            activeNeutrons: 0,
+            totalNeutrons: 0,
+            energy: 0,
+            startTime: 0
+        };
+        
+        class Particle {
+            constructor(x, y, type, vx = 0, vy = 0) {
+                this.x = x;
+                this.y = y;
+                this.type = type; // 'uranium', 'neutron', 'fragment', 'energy'
+                this.vx = vx;
+                this.vy = vy;
+                this.size = this.getSize();
+                this.color = this.getColor();
+                this.life = 1.0;
+                this.created = Date.now();
+                this.hasCollided = false;
+            }
+            
+            getSize() {
+                switch(this.type) {
+                    case 'uranium': return 25;
+                    case 'neutron': return 8;
+                    case 'fragment': return 15;
+                    case 'energy': return 12;
+                    default: return 10;
+                }
+            }
+            
+            getColor() {
+                switch(this.type) {
+                    case 'uranium': return '#ff6b35';
+                    case 'neutron': return '#00ff88';
+                    case 'fragment': return '#ffff00';
+                    case 'energy': return '#ff00ff';
+                    default: return '#ffffff';
+                }
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // 에너지 입자는 시간에 따라 사라짐
+                if (this.type === 'energy') {
+                    this.life -= 0.02;
+                    this.size *= 0.98;
+                }
+                
+                // 경계에서 반사
+                if (this.x < this.size || this.x > canvas.width - this.size) {
+                    this.vx *= -0.8;
+                    this.x = Math.max(this.size, Math.min(canvas.width - this.size, this.x));
+                }
+                if (this.y < this.size || this.y > canvas.height - this.size) {
+                    this.vy *= -0.8;
+                    this.y = Math.max(this.size, Math.min(canvas.height - this.size, this.y));
+                }
+                
+                // 마찰
+                this.vx *= 0.99;
+                this.vy *= 0.99;
+            }
+            
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                
+                // 외부 글로우 효과
+                ctx.shadowColor = this.color;
+                ctx.shadowBlur = 20;
+                
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                
+                // 내부 하이라이트
+                ctx.shadowBlur = 0;
+                ctx.beginPath();
+                ctx.arc(this.x - this.size/3, this.y - this.size/3, this.size/3, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.fill();
+                
+                // 원자핵 번호 표시
+                if (this.type === 'uranium') {
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 12px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('U-235', this.x, this.y + 4);
+                }
+                
+                ctx.restore();
+            }
+            
+            distanceTo(other) {
+                return Math.sqrt((this.x - other.x) ** 2 + (this.y - other.y) ** 2);
+            }
+        }
+        
+        function initializeSimulation() {
+            particles = [];
+            generationCount = 0;
+            lastReactionTime = Date.now();
+            reactionRate = 0;
+            stats = { 
+                fissions: 0, 
+                activeNeutrons: 0, 
+                totalNeutrons: 0, 
+                energy: 0,
+                startTime: Date.now()
+            };
+            
+            const uraniumCount = parseInt(document.getElementById('uraniumCount').value);
+            const criticalMultiplier = parseFloat(document.getElementById('criticalMass').value);
+            
+            // 우라늄 원자핵들을 랜덤하게 배치 (고밀도)
+            const density = Math.sqrt(uraniumCount) / 10; // 밀도 조정
+            for (let i = 0; i < uraniumCount; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const radius = Math.random() * Math.min(canvas.width, canvas.height) * 0.3;
+                const x = canvas.width/2 + Math.cos(angle) * radius;
+                const y = canvas.height/2 + Math.sin(angle) * radius;
+                
+                particles.push(new Particle(
+                    Math.max(30, Math.min(canvas.width - 30, x)),
+                    Math.max(30, Math.min(canvas.height - 30, y)),
+                    'uranium'
+                ));
+            }
+            
+            updateStats();
+        }
+        
+        function createFission(uranium) {
+            const criticalMultiplier = parseFloat(document.getElementById('criticalMass').value);
+            
+            // 분열 생성물 2개 생성
+            const angle1 = Math.random() * Math.PI * 2;
+            const angle2 = angle1 + Math.PI + (Math.random() - 0.5) * 0.5;
+            const speed = (2 + Math.random() * 3) * Math.sqrt(criticalMultiplier);
+            
+            particles.push(new Particle(
+                uranium.x,
+                uranium.y,
+                'fragment',
+                Math.cos(angle1) * speed,
+                Math.sin(angle1) * speed
+            ));
+            
+            particles.push(new Particle(
+                uranium.x,
+                uranium.y,
+                'fragment',
+                Math.cos(angle2) * speed,
+                Math.sin(angle2) * speed
+            ));
+            
+            // 임계질량 배수에 따른 중성자 생성 (2-4개, 폭탄 모드에서는 더 많이)
+            const baseNeutrons = 2 + Math.floor(Math.random() * 3);
+            const neutronCount = Math.floor(baseNeutrons * (1 + criticalMultiplier * 0.2));
+            
+            for (let i = 0; i < neutronCount; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = (3 + Math.random() * 4) * Math.sqrt(criticalMultiplier);
+                particles.push(new Particle(
+                    uranium.x + (Math.random() - 0.5) * 40,
+                    uranium.y + (Math.random() - 0.5) * 40,
+                    'neutron',
+                    Math.cos(angle) * speed,
+                    Math.sin(angle) * speed
+                ));
+                stats.totalNeutrons++;
+            }
+            
+            // 에너지 입자들 생성 (더 많이, 더 빠르게)
+            const energyParticles = Math.floor(15 * criticalMultiplier);
+            for (let i = 0; i < energyParticles; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = (4 + Math.random() * 6) * criticalMultiplier;
+                particles.push(new Particle(
+                    uranium.x,
+                    uranium.y,
+                    'energy',
+                    Math.cos(angle) * speed,
+                    Math.sin(angle) * speed
+                ));
+            }
+            
+            stats.fissions++;
+            // 실제 핵분열 에너지: 200 MeV = 0.000032 kt TNT 상당
+            stats.energy += 0.000032 * criticalMultiplier;
+            
+            // 반응률 계산
+            const now = Date.now();
+            const timeDiff = (now - lastReactionTime) / 1000;
+            if (timeDiff > 0) {
+                reactionRate = 1 / timeDiff;
+            }
+            lastReactionTime = now;
+        }
+        
+        function checkCollisions() {
+            let activeLeutrons = 0;
+            
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const particle = particles[i];
+                
+                if (particle.type === 'neutron') {
+                    activeLeutrons++;
+                    
+                    for (let j = particles.length - 1; j >= 0; j--) {
+                        const other = particles[j];
+                        
+                        if (other.type === 'uranium' && !other.hasCollided) {
+                            const distance = particle.distanceTo(other);
+                            
+                            if (distance < particle.size + other.size) {
+                                // 분열 확률 (임계질량 배수에 따라 증가)
+                                const criticalMultiplier = parseFloat(document.getElementById('criticalMass').value);
+                                const fissionProbability = Math.min(0.95, 0.1 * criticalMultiplier);
+                                
+                                if (Math.random() < fissionProbability) {
+                                    createFission(other);
+                                    other.hasCollided = true;
+                                    generationCount++;
+                                    
+                                    // 우라늄과 중성자 제거
+                                    particles.splice(j, 1);
+                                    if (i > j) i--;
+                                    particles.splice(i, 1);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            stats.activeNeutrons = activeLeutrons;
+            
+            // 수명이 다한 입자들 제거
+            particles = particles.filter(p => p.life > 0);
+            
+            // 폭탄 모드에서 모든 우라늄이 소진되거나 중성자가 없으면 종료
+            const remainingUranium = particles.filter(p => p.type === 'uranium').length;
+            if (isBombMode && (remainingUranium === 0 || activeLeutrons === 0)) {
+                setTimeout(() => {
+                    isRunning = false;
+                    alert(`💥 폭발 완료!\n분열된 원자핵: ${stats.fissions.toLocaleString()}\n폭발 에너지: ${stats.energy.toFixed(3)} kt TNT\n세대 수: ${generationCount}`);
+                }, 100);
+            }
+        }
+        
+        function animate() {
+            if (!isRunning || isPaused) return;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 배경 효과
+            ctx.fillStyle = 'rgba(0, 17, 34, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 입자 업데이트 및 그리기
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+            
+            checkCollisions();
+            updateStats();
+            
+            requestAnimationFrame(animate);
+        }
+        
+        function updateStats() {
+            document.getElementById('fissionCount').textContent = stats.fissions.toLocaleString();
+            document.getElementById('activeNeutronCount').textContent = stats.activeNeutrons.toLocaleString();
+            document.getElementById('totalNeutronCount').textContent = stats.totalNeutrons.toLocaleString();
+            document.getElementById('energyCount').textContent = stats.energy.toFixed(3) + ' kt TNT';
+            document.getElementById('reactionRate').textContent = Math.floor(reactionRate).toLocaleString() + ' /초';
+            
+            const energyPercent = Math.min(100, (stats.energy / 20) * 100); // 20kt를 100%로 설정
+            document.getElementById('energyBar').style.width = energyPercent + '%';
+        }
+        
+        function startSimulation() {
+            if (!isRunning) {
+                isRunning = true;
+                isPaused = false;
+                isBombMode = false;
+                stats.startTime = Date.now();
+                
+                const initialNeutrons = parseInt(document.getElementById('neutronCount').value);
+                
+                // 초기 중성자들을 중앙에서 랜덤하게 발사
+                for (let i = 0; i < initialNeutrons; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = 2 + Math.random() * 3;
+                    particles.push(new Particle(
+                        canvas.width/2 + (Math.random() - 0.5) * 100,
+                        canvas.height/2 + (Math.random() - 0.5) * 100,
+                        'neutron',
+                        Math.cos(angle) * speed,
+                        Math.sin(angle) * speed
+                    ));
+                }
+                
+                animate();
+            }
+        }
+        
+        function startBombSimulation() {
+            if (!isRunning) {
+                isRunning = true;
+                isPaused = false;
+                isBombMode = true;
+                stats.startTime = Date.now();
+                
+                const initialNeutrons = parseInt(document.getElementById('neutronCount').value) * 10;
+                const criticalMultiplier = parseFloat(document.getElementById('criticalMass').value);
+                
+                // 폭탄 모드: 여러 지점에서 동시 중성자 투입 (압축 폭발)
+                const compressionPoints = Math.floor(8 * Math.sqrt(criticalMultiplier));
+                for (let i = 0; i < compressionPoints; i++) {
+                    const angle = (i / compressionPoints) * Math.PI * 2;
+                    const radius = Math.min(canvas.width, canvas.height) * 0.4;
+                    const startX = canvas.width/2 + Math.cos(angle) * radius;
+                    const startY = canvas.height/2 + Math.sin(angle) * radius;
+                    
+                    // 각 지점에서 중심을 향해 고속 중성자 발사
+                    for (let j = 0; j < initialNeutrons / compressionPoints; j++) {
+                        const speed = (8 + Math.random() * 12) * criticalMultiplier;
+                        const towardCenter = Math.atan2(canvas.height/2 - startY, canvas.width/2 - startX);
+                        const spread = (Math.random() - 0.5) * 0.3;
+                        
+                        particles.push(new Particle(
+                            startX,
+                            startY,
+                            'neutron',
+                            Math.cos(towardCenter + spread) * speed,
+                            Math.sin(towardCenter + spread) * speed
+                        ));
+                    }
+                }
+                
+                animate();
+            }
+        }
+        
+        function resetSimulation() {
+            isRunning = false;
+            isPaused = false;
+            isBombMode = false;
+            generationCount = 0;
+            reactionRate = 0;
+            initializeSimulation();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 초기 우라늄 원자핵들 그리기
+            particles.forEach(particle => particle.draw());
+        }
+        
+        function pauseSimulation() {
+            isPaused = !isPaused;
+            document.getElementById('pauseBtn').textContent = isPaused ? '재개' : '일시정지';
+            
+            if (!isPaused && isRunning) {
+                animate();
+            }
+        }
+        
+        // 이벤트 리스너
+        document.getElementById('startBtn').addEventListener('click', startSimulation);
+        document.getElementById('resetBtn').addEventListener('click', resetSimulation);
+        document.getElementById('pauseBtn').addEventListener('click', pauseSimulation);
+        document.getElementById('bombBtn').addEventListener('click', startBombSimulation);
+        
+        // 설정 변경 시 리셋
+        document.getElementById('uraniumCount').addEventListener('change', resetSimulation);
+        document.getElementById('criticalMass').addEventListener('change', resetSimulation);
+        
+        // 초기화
+        initializeSimulation();
+        particles.forEach(particle => particle.draw());
+    </script>
+</body>
+</html>
