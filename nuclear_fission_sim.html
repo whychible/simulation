@@ -597,15 +597,13 @@
         // 이벤트 리스너
         document.getElementById('startBtn').addEventListener('click', startSimulation);
         document.getElementById('resetBtn').addEventListener('click', resetSimulation);
-        document.getElementById('pauseBtn').addEventListener('click', pauseSimulation);
-        document.getElementById('bombBtn').addEventListener('click', startBombSimulation);
-        
+        document.getElementById('pauseBtn').addEventListener('click', pauseSimulation);        
         // 설정 변경 시 리셋
         document.getElementById('uraniumCount').addEventListener('change', resetSimulation);
         document.getElementById('criticalMass').addEventListener('change', resetSimulation);
         
         // 초기화
-        resetSimulation();
+        initializeSimulation();
         particles.forEach(particle => particle.draw());
     </script>
 </body>
