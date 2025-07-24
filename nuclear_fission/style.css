@@ -1,0 +1,771 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 10px;
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #0a0a0a, #1a0a2e, #16213e);
+    color: white;
+    overflow-x: hidden;
+    touch-action: manipulation;
+    animation: backgroundPulse 4s ease-in-out infinite alternate;
+    min-height: 100vh;
+    position: relative;
+}
+
+/* 폭발 열기 효과를 위한 전체 화면 오버레이 */
+.heat-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0;
+    background: radial-gradient(circle at 50% 50%, 
+        rgba(255, 100, 0, 0.8) 0%, 
+        rgba(255, 150, 0, 0.6) 20%, 
+        rgba(255, 200, 0, 0.4) 40%,
+        rgba(255, 255, 100, 0.2) 60%,
+        transparent 80%);
+    transition: opacity 0.3s ease;
+}
+
+.heat-overlay.active {
+    opacity: 1;
+    animation: heatPulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes heatPulse {
+    0% { 
+        transform: scale(0.8);
+        background: radial-gradient(circle at 50% 50%, 
+            rgba(255, 100, 0, 0.8) 0%, 
+            rgba(255, 150, 0, 0.6) 20%, 
+            rgba(255, 200, 0, 0.4) 40%,
+            rgba(255, 255, 100, 0.2) 60%,
+            transparent 80%);
+    }
+    100% { 
+        transform: scale(1.2);
+        background: radial-gradient(circle at 50% 50%, 
+            rgba(255, 50, 0, 1) 0%, 
+            rgba(255, 100, 0, 0.8) 15%, 
+            rgba(255, 150, 0, 0.6) 30%,
+            rgba(255, 200, 0, 0.4) 50%,
+            rgba(255, 255, 100, 0.2) 70%,
+            transparent 90%);
+    }
+}
+
+/* 낙진 효과 */
+.fallout-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 999;
+    opacity: 0;
+    background: linear-gradient(0deg, 
+        rgba(100, 80, 60, 0.7) 0%,
+        rgba(120, 100, 80, 0.5) 30%,
+        rgba(140, 120, 100, 0.3) 60%,
+        transparent 100%);
+    transition: opacity 1s ease;
+}
+
+.fallout-overlay.active {
+    opacity: 1;
+    animation: falloutDrift 8s ease-in-out infinite;
+}
+
+@keyframes falloutDrift {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-20px) rotate(1deg); }
+    75% { transform: translateY(20px) rotate(-1deg); }
+}
+
+@keyframes backgroundPulse {
+    0% { background: linear-gradient(135deg, #0a0a0a, #1a0a2e, #16213e); }
+    100% { background: linear-gradient(135deg, #0c0c0c, #1c0c30, #18253e); }
+}
+
+/* 폭발 강도에 따른 화면 진동 효과 */
+.explosion-shake {
+    animation: explosionShake var(--shake-duration, 0.8s) ease-in-out;
+}
+
+@keyframes explosionShake {
+    0%, 100% { transform: translate(0); }
+    10% { transform: translate(-10px, -5px) rotate(-1deg); }
+    20% { transform: translate(10px, 5px) rotate(1deg); }
+    30% { transform: translate(-8px, 3px) rotate(-0.5deg); }
+    40% { transform: translate(8px, -3px) rotate(0.5deg); }
+    50% { transform: translate(-5px, 2px) rotate(-0.3deg); }
+    60% { transform: translate(5px, -2px) rotate(0.3deg); }
+    70% { transform: translate(-3px, 1px) rotate(-0.1deg); }
+    80% { transform: translate(3px, -1px) rotate(0.1deg); }
+    90% { transform: translate(-1px, 0px); }
+}
+
+.container {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 0 5px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+h1 {
+    text-align: center;
+    color: #00ff88;
+    font-size: clamp(1.5rem, 5vw, 2.5rem);
+    text-shadow: 0 0 20px #00ff88, 0 0 40px #00ff88;
+    margin: 10px 0 15px 0;
+    animation: titleGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes titleGlow {
+    0% { text-shadow: 0 0 20px #00ff88, 0 0 40px #00ff88; }
+    100% { text-shadow: 0 0 30px #00ff88, 0 0 60px #00ff88, 0 0 80px #00ff88; }
+}
+
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.control-section {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    backdrop-filter: blur(15px);
+    padding: 15px;
+    border-radius: 15px;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+    margin-bottom: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.preset-buttons {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr); /* 6개 버튼을 정확히 6열로 배치 */
+    gap: 6px; /* 간격을 줄여서 공간 확보 */
+    margin-bottom: 15px;
+    height: 44px; /* 고정 높이 설정 */
+}
+
+.preset-btn {
+    padding: 6px 8px; /* 패딩 줄임 */
+    font-size: 0.75rem; /* 폰트 크기 약간 줄임 */
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background: linear-gradient(45deg, #333, #555);
+    color: white;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    touch-action: manipulation;
+    height: 44px; /* 고정 높이 설정 */
+    width: 100%; /* 전체 너비 사용 */
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    white-space: nowrap; /* 텍스트 줄바꿈 방지 */
+}
+
+.preset-btn.active {
+    background: linear-gradient(45deg, #ff6b35, #ff8e53);
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+}
+
+.preset-info {
+    font-size: 0.8rem;
+    color: #aaa;
+    margin-top: 5px;
+    height: 32px;
+    line-height: 1.3;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.preset-btn:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+}
+
+button {
+    padding: 12px 20px;
+    font-size: 0.9rem;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    background: linear-gradient(45deg, #ff6b35, #ff8e53, #ffaa70);
+    color: white;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+    touch-action: manipulation;
+    min-height: 44px;
+    position: relative;
+    overflow: hidden;
+}
+
+button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.5s;
+}
+
+button:hover::before {
+    left: 100%;
+}
+
+button:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 8px 25px rgba(255, 107, 53, 0.6), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+button:active {
+    transform: translateY(-1px) scale(1.02);
+}
+
+button:disabled {
+    background: #666;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.canvas-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+    position: relative;
+}
+
+#canvas {
+    border: 3px solid #00ff88;
+    border-radius: 15px;
+    background: radial-gradient(circle at center, #001122, #000618, #000011);
+    box-shadow: 0 0 40px rgba(0, 255, 136, 0.4), inset 0 0 20px rgba(0, 255, 136, 0.1);
+    touch-action: none;
+    animation: canvasGlow 3s ease-in-out infinite alternate;
+    max-width: 100%;
+    height: auto;
+    transition: all 0.3s ease;
+}
+
+/* 폭발 시 캔버스 효과 */
+#canvas.explosion-glow {
+    border-color: #ff6600;
+    box-shadow: 0 0 100px rgba(255, 102, 0, 0.8), 
+                inset 0 0 50px rgba(255, 102, 0, 0.3),
+                0 0 200px rgba(255, 102, 0, 0.4);
+    animation: explosionCanvasGlow 0.5s ease-in-out;
+}
+
+@keyframes explosionCanvasGlow {
+    0% { 
+        box-shadow: 0 0 40px rgba(0, 255, 136, 0.4), inset 0 0 20px rgba(0, 255, 136, 0.1);
+        border-color: #00ff88;
+    }
+    50% { 
+        box-shadow: 0 0 150px rgba(255, 102, 0, 1), 
+                    inset 0 0 80px rgba(255, 102, 0, 0.5),
+                    0 0 300px rgba(255, 102, 0, 0.6);
+        border-color: #ff3300;
+    }
+    100% { 
+        box-shadow: 0 0 100px rgba(255, 102, 0, 0.8), 
+                    inset 0 0 50px rgba(255, 102, 0, 0.3),
+                    0 0 200px rgba(255, 102, 0, 0.4);
+        border-color: #ff6600;
+    }
+}
+
+@keyframes canvasGlow {
+    0% { box-shadow: 0 0 40px rgba(0, 255, 136, 0.4), inset 0 0 20px rgba(0, 255, 136, 0.1); }
+    100% { box-shadow: 0 0 60px rgba(0, 255, 136, 0.6), inset 0 0 30px rgba(0, 255, 136, 0.2); }
+}
+
+.info-panel {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 15px;
+    flex-grow: 1;
+}
+
+.info-card {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    backdrop-filter: blur(15px);
+    padding: 20px;
+    border-radius: 20px;
+    border: 1px solid rgba(0, 255, 136, 0.4);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.info-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #ff6b35, #00ff88, #ff6b35);
+    animation: borderFlow 3s linear infinite;
+}
+
+@keyframes borderFlow {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.info-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    border-color: rgba(0, 255, 136, 0.6);
+}
+
+.info-card h3 {
+    color: #00ff88;
+    margin-top: 0;
+    font-size: 1.2rem;
+    text-shadow: 0 0 10px #00ff88;
+}
+
+.info-card p {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin: 8px 0;
+}
+
+.stats {
+    display: flex;
+    justify-content: space-between;
+    margin: 10px 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.stats span:last-child {
+    color: #00ff88;
+    text-shadow: 0 0 5px #00ff88;
+}
+
+.energy-bar {
+    width: 100%;
+    height: 25px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    overflow: hidden;
+    margin: 15px 0;
+    border: 2px solid rgba(0, 255, 136, 0.3);
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+.energy-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff6b35, #ffaa00, #ff0066, #ff0000);
+    transition: width 0.5s ease;
+    border-radius: 13px;
+    box-shadow: 0 0 20px rgba(255, 107, 53, 0.6);
+    position: relative;
+}
+
+.energy-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(90deg, rgba(255,255,255,0.3), transparent);
+    border-radius: 13px 13px 0 0;
+}
+
+/* 열기 게이지 추가 */
+.heat-gauge {
+    width: 100%;
+    height: 30px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 15px;
+    overflow: hidden;
+    margin: 15px 0;
+    border: 2px solid rgba(255, 102, 0, 0.3);
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
+    position: relative;
+}
+
+.heat-fill {
+    height: 100%;
+    background: linear-gradient(90deg, 
+        #ffaa00 0%, 
+        #ff6600 25%, 
+        #ff3300 50%, 
+        #ff0000 75%, 
+        #aa0000 100%);
+    transition: width 0.3s ease;
+    border-radius: 13px;
+    box-shadow: 0 0 30px rgba(255, 102, 0, 0.8);
+    position: relative;
+}
+
+.heat-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(90deg, rgba(255,255,255,0.4), transparent);
+    border-radius: 13px 13px 0 0;
+}
+
+.heat-gauge::before {
+    content: '🌡️';
+    position: absolute;
+    left: -30px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.2rem;
+}
+
+input, select {
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 2px solid #00ff88;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    text-align: center;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    width: 100%;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: #ff6b35;
+    box-shadow: 0 0 15px rgba(255, 107, 53, 0.5);
+    transform: scale(1.05);
+}
+
+label {
+    color: #00ff88;
+    font-weight: bold;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+    text-shadow: 0 0 5px #00ff88;
+    display: block;
+}
+
+.toggle-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 10px 0;
+}
+
+.toggle-switch {
+    position: relative;
+    width: 50px;
+    height: 25px;
+    background: #333;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.toggle-switch.active {
+    background: #00ff88;
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
+}
+
+.toggle-switch::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 21px;
+    height: 21px;
+    background: white;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.toggle-switch.active::before {
+    transform: translateX(25px);
+}
+
+.status-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 8px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.status-active {
+    background: #00ff88;
+    box-shadow: 0 0 10px #00ff88;
+}
+
+.status-stable {
+    background: #ffaa00;
+    box-shadow: 0 0 10px #ffaa00;
+}
+
+.status-critical {
+    background: #ff0000;
+    box-shadow: 0 0 10px #ff0000;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.2); }
+}
+
+.damage-zones {
+    margin-top: 10px;
+}
+
+.damage-zone {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 5px 0;
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+}
+
+.zone-total { background: rgba(255, 0, 0, 0.2); }
+.zone-severe { background: rgba(255, 100, 0, 0.2); }
+.zone-moderate { background: rgba(255, 200, 0, 0.2); }
+.zone-light { background: rgba(255, 255, 0, 0.2); }
+
+.grid-controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.particle-legend {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+}
+
+.particle-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.particle-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(0, 255, 136, 0.3);
+    transform: translateY(-2px);
+}
+
+.particle-symbol {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: white;
+    text-shadow: 0 0 8px currentColor;
+    box-shadow: 0 0 15px currentColor;
+    flex-shrink: 0;
+}
+
+.uranium-symbol {
+    background: #ff4500;
+    box-shadow: 0 0 15px #ff4500;
+}
+
+.neutron-symbol {
+    background: #00bfff;
+    box-shadow: 0 0 15px #00bfff;
+}
+
+.fragment-symbol {
+    background: #ffd700;
+    box-shadow: 0 0 15px #ffd700;
+}
+
+.energy-symbol {
+    background: #ff1493;
+    box-shadow: 0 0 15px #ff1493;
+}
+
+.particle-desc {
+    flex-grow: 1;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.particle-desc strong {
+    color: #00ff88;
+    text-shadow: 0 0 5px #00ff88;
+}
+
+/* 낙진 입자 애니메이션 */
+.fallout-particle {
+    position: fixed;
+    width: 2px;
+    height: 2px;
+    background: rgba(120, 100, 80, 0.8);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 998;
+    animation: falloutParticle 10s linear infinite;
+}
+
+@keyframes falloutParticle {
+    0% {
+        opacity: 0;
+        transform: translateY(-100vh) rotate(0deg);
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(100vh) rotate(360deg);
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 5px;
+    }
+    
+    .container {
+        padding: 0 2px;
+    }
+    
+    .controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .info-panel {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .info-card {
+        padding: 15px;
+    }
+    
+    h1 {
+        font-size: clamp(1.2rem, 4vw, 1.8rem);
+        margin: 5px 0 10px 0;
+    }
+    
+    .preset-buttons {
+        grid-template-columns: repeat(3, 1fr); /* 모바일에서 3열로 변경 */
+        grid-template-rows: repeat(2, 1fr); /* 2행으로 설정 */
+        gap: 4px;
+        height: 88px; /* 2줄이므로 높이를 2배로 */
+    }
+    
+    .preset-btn {
+        font-size: 0.65rem; /* 모바일에서 더 작은 폰트 */
+        padding: 4px 6px;
+        height: 40px; /* 모바일에서 고정 높이 */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+    
+    .preset-info {
+        height: 28px; /* 모바일에서 약간 작은 높이 */
+        font-size: 0.75rem;
+        padding: 3px 6px;
+    }
+    
+    .particle-item {
+        gap: 10px;
+        padding: 8px;
+    }
+    
+    .particle-symbol {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
+    }
+    
+    .particle-desc {
+        font-size: 0.8rem;
+    }
+    
+    button {
+        font-size: 0.8rem;
+        padding: 10px 16px;
+        min-height: 40px;
+    }
+    
+    #canvas {
+        max-width: calc(100vw - 20px);
+        max-height: 300px;
+    }
+}
+
+@keyframes glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 136, 0.3); }
+    50% { box-shadow: 0 0 40px rgba(0, 255, 136, 0.6); }
+}
+
+.glowing {
+    animation: glow 2s infinite;
+} 

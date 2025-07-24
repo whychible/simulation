@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>핵분열 시뮬레이션</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 핵분열 시뮬레이션</h1>
+        
+        <div class="controls">
+            <div class="control-section">
+                <label>🌍 국가별 핵무기 프리셋</label>
+                <div class="preset-buttons">
+                    <button class="preset-btn" data-preset="custom">커스텀</button>
+                    <button class="preset-btn" data-preset="north-korea">🇰🇵 북한</button>
+                    <button class="preset-btn" data-preset="usa">🇺🇸 미국</button>
+                    <button class="preset-btn" data-preset="china">🇨🇳 중국</button>
+                    <button class="preset-btn" data-preset="russia">🇷🇺 러시아</button>
+                    <button class="preset-btn" data-preset="iran">🇮🇷 이란*</button>
+                </div>
+                <div id="presetInfo" class="preset-info">
+                    커스텀 설정을 선택하세요
+                </div>
+            </div>
+            
+            <div class="control-section">
+                <div class="grid-controls">
+                    <div class="control-group">
+                        <label>⚛️ 우라늄 원자핵</label>
+                        <input type="number" id="uraniumCount" value="500" min="50" max="5000">
+                    </div>
+                    <div class="control-group">
+                        <label>🔵 초기 중성자</label>
+                        <input type="number" id="neutronCount" value="5" min="1" max="100">
+                    </div>
+                    <div class="control-group">
+                        <label>📊 임계질량 배수</label>
+                        <select id="criticalMass">
+                            <option value="1">1x (임계)</option>
+                            <option value="2" selected>2x (초임계)</option>
+                            <option value="3">3x (폭탄급)</option>
+                            <option value="5">5x (강력)</option>
+                            <option value="6">6x (강력)</option>
+                            <option value="8">8x (극한)</option>
+                            <option value="10">10x (극한)</option>
+                            <option value="15">15x (수소폭탄)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                    <button id="startBtn">🚀 시뮬레이션 시작</button>
+                    <button id="resetBtn">🔄 리셋</button>
+                    <button id="pauseBtn">⏸️ 일시정지</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="canvas" width="500" height="350"></canvas>
+        </div>
+        
+        <div class="info-panel">
+            <div class="info-card">
+                <h3>🔬 시뮬레이션 정보</h3>
+                <div class="stats">
+                    <span>상태:</span>
+                    <span id="simulationStatus"><span class="status-indicator status-stable"></span>대기 중</span>
+                </div>
+                <div class="stats">
+                    <span>분열된 원자핵:</span>
+                    <span id="fissionCount">0</span>
+                </div>
+                <div class="stats">
+                    <span>활성 중성자:</span>
+                    <span id="activeNeutronCount">0</span>
+                </div>
+                <div class="stats">
+                    <span>총 방출 중성자:</span>
+                    <span id="totalNeutronCount">0</span>
+                </div>
+                <div class="stats">
+                    <span>폭발 에너지:</span>
+                    <span id="energyCount">0 kt TNT</span>
+                </div>
+                <div class="stats">
+                    <span>반응률:</span>
+                    <span id="reactionRate">0 /초</span>
+                </div>
+                <div>에너지 레벨:</div>
+                <div class="energy-bar">
+                    <div class="energy-fill" id="energyBar" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <div class="info-card">
+                <h3>💥 예상 피해 범위</h3>
+                <div class="stats">
+                    <span>폭발 중심 온도:</span>
+                    <span id="centerTemp">0°C</span>
+                </div>
+                <div class="stats">
+                    <span>현재 온도:</span>
+                    <span id="currentTemp">0°C</span>
+                </div>
+                <div class="stats">
+                    <span>버섯구름 높이:</span>
+                    <span id="cloudHeight">0m</span>
+                </div>
+                <div>열기 레벨:</div>
+                <div class="heat-gauge">
+                    <div class="heat-fill" id="heatFill" style="width: 0%"></div>
+                </div>
+                <div class="damage-zones">
+                    <div class="damage-zone zone-total">
+                        <span>🔴 완전파괴 구역:</span>
+                        <span id="totalDestroy">0km</span>
+                    </div>
+                    <div class="damage-zone zone-severe">
+                        <span>🟠 중파괴 구역:</span>
+                        <span id="severeDestroy">0km</span>
+                    </div>
+                    <div class="damage-zone zone-moderate">
+                        <span>🟡 경파괴 구역:</span>
+                        <span id="moderateDestroy">0km</span>
+                    </div>
+                    <div class="damage-zone zone-light">
+                        <span>🟢 방사능 영향:</span>
+                        <span id="radiationZone">0km</span>
+                    </div>
+                </div>
+                <div style="font-size: 0.75rem; color: #888; margin-top: 10px;">
+                    *교육용 시뮬레이션으로 실제와 다를 수 있음
+                </div>
+            </div>
+            
+            <div class="info-card">
+                <h3>⚛️ 핵분열 과정</h3>
+                <p><strong>1단계:</strong> 중성자가 우라늄-235 원자핵과 충돌</p>
+                <p><strong>2단계:</strong> 불안정한 우라늄-236 형성</p>
+                <p><strong>3단계:</strong> 두 개의 더 작은 원자핵으로 분열</p>
+                <p><strong>4단계:</strong> 2-3개의 새로운 중성자와 에너지 방출</p>
+                <p><strong>연쇄반응:</strong> 방출된 중성자가 다른 원자핵을 분열시킴</p>
+            </div>
+            
+            <div class="info-card">
+                <h3>💥 핵무기 비교 데이터</h3>
+                <p><strong>리틀보이 (히로시마):</strong> 15 kt TNT, 64kg 우라늄-235</p>
+                <p><strong>팻맨 (나가사키):</strong> 21 kt TNT, 6.2kg 플루토늄-239</p>
+                <p><strong>차르 봄바 (소련):</strong> 50,000 kt TNT, 수소폭탄</p>
+                <p><strong>현대 전략핵:</strong> 100-500 kt TNT 평균</p>
+                <p><strong>전술핵:</strong> 0.3-50 kt TNT</p>
+                <p><strong>임계질량:</strong> U-235 약 52kg, Pu-239 약 10kg</p>
+            </div>
+            
+            <div class="info-card">
+                <h3>🔬 입자 기호 설명</h3>
+                <div class="particle-legend">
+                    <div class="particle-item">
+                        <span class="particle-symbol uranium-symbol">U</span>
+                        <div class="particle-desc">
+                            <strong>우라늄-235 (U)</strong><br>
+                            핵분열 가능한 원자핵. 중성자와 충돌하면 분열됩니다.
+                        </div>
+                    </div>
+                    <div class="particle-item">
+                        <span class="particle-symbol neutron-symbol">n</span>
+                        <div class="particle-desc">
+                            <strong>중성자 (n)</strong><br>
+                            우라늄 원자핵을 분열시키는 입자. 연쇄반응의 핵심입니다.
+                        </div>
+                    </div>
+                    <div class="particle-item">
+                        <span class="particle-symbol fragment-symbol">F</span>
+                        <div class="particle-desc">
+                            <strong>분열조각 (F)</strong><br>
+                            우라늄이 분열되어 생성된 더 작은 원자핵입니다.
+                        </div>
+                    </div>
+                    <div class="particle-item">
+                        <span class="particle-symbol energy-symbol">E</span>
+                        <div class="particle-desc">
+                            <strong>에너지 (E)</strong><br>
+                            핵분열에서 방출되는 막대한 에너지를 나타냅니다.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
